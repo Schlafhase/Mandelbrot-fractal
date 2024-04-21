@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
@@ -17,13 +18,33 @@ namespace Mandelbrot_fractal_2
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            Bitmap bitmap = Mandelbrot.CreateBitmap(800, 800, 1000, xLeft: -1.5, xRight: -1.4, yBottom: -0.05, yTop: 0.05);
-            TestForm form = new TestForm();
-            form.SetBitmap(bitmap);
+            //Bitmap bitmap = Mandelbrot.CreateBitmap(800, 800, 1000, xLeft: -1.7, xRight: 1, yBottom: -1.35, yTop: 1.35);
+            FractalDisplay form = new FractalDisplay();
+            //form.SetBitmap(bitmap);
             Application.Run(form);
         }
     }
 
+    public struct ScreenSection
+    {
+        public double centerX { get; set; }
+        public double centerY { get; set; }
+        public double xLeft { get; }
+        public double xRight { get; }
+        public double yBottom { get; }
+        public double yTop { get; }
+
+        public ScreenSection(ComplexNumber center, double squareLength)
+        {
+            this.centerX = center.X;
+            this.centerY = center.Y;
+
+            this.xLeft = center.X - squareLength/2;
+            this.xRight = center.X + squareLength/2;
+            this.yBottom = -center.Y + squareLength/2;
+            this.yTop = -center.Y - squareLength/2;
+        }
+    }
     public struct ComplexNumber
     {
 
@@ -73,17 +94,8 @@ namespace Mandelbrot_fractal_2
                 .ToArray();
 
             Color[] palette = new Color[paletteLength];
-
-            //int i = 0;
-            //foreach(var t in ts)
-            //{
-            //    int r = (int)(startColor.R + (endColor.R - startColor.R) * t);
-            //    int g = (int)(startColor.G + (endColor.G - startColor.G) * t);
-            //    int b = (int)(startColor.B + (endColor.B - startColor.B) * t);
-            //    result[i] = Color.FromArgb(r, g, b);
-            //    i++;
-            //}
             Color startColor = colors[0];
+
             int j = 0;
             Color lastColor = new Color();
             foreach (Color endColor in colors.Skip(1))
@@ -124,14 +136,30 @@ namespace Mandelbrot_fractal_2
 
         private readonly static object locker = new object();
 
-        public static Bitmap CreateBitmap(int width, int height, int iterations, double xLeft = -1.7, double xRight = 0.7, double yBottom = -1.2, double yTop = 1.2)
+        public static ComplexNumber ScreenPosToComplexNumber(int width, int height, double xLeft, double xRight, double yBottom, double yTop, int screenX, int screenY)
+        {
+            double deltaX = (xRight - xLeft) / width;
+            double deltaY = (yTop - yBottom) / height;
+
+            double realValue = screenX * deltaX + xLeft;
+            double imaginaryValue = -(-screenY * deltaY + yTop);
+
+            ComplexNumber result = new ComplexNumber(realValue, imaginaryValue);
+
+            return result;
+        }
+
+        public static ComplexNumber ComplexNumberToScreenPos(int width, int height, double xLeft, double xRight, double yBottom, double yTop, int screenX, int screenY)
+        {
+            throw new NotImplementedException();
+        }
+
+
+        public static Bitmap CreateBitmap(int width, int height, int iterations, double xLeft, double xRight, double yBottom, double yTop, ProgressBar progressBar)
         {
             Random rnd = new Random(0);
-            //Color[] colors = Enumerable.Range(0, iterations)
-            //    .Select(x => Color.FromArgb(255, rnd.Next(10, 255), rnd.Next(10, 255), rnd.Next(10, 255)))
-            //    .Concat(new[] { Color.Black })
-            //    .ToArray();
             Color[] colorPalette = generateColorArray(iterations);
+            progressBar.Maximum = (width * height);
 
             double deltaX = (xRight - xLeft) / width;
             double deltaY = (yTop - yBottom) / height;
@@ -139,13 +167,13 @@ namespace Mandelbrot_fractal_2
 
             Console.WriteLine((width, height));
 
-
+            int pixel = 0;
             for (int x = 0; (x < width); x++)
             {
                 Parallel.For(0, height, y =>
                 {
                     double mandelbrotX = x * deltaX + xLeft;
-                    double mandelbrotY = -y * deltaY + yTop;
+                    double mandelbrotY = -(-y * deltaY + yTop);
                     ComplexNumber c = new ComplexNumber(mandelbrotX, mandelbrotY);
                     int mandelBrotIndex = belongsToMandelbrot(c, iterations);
                     Color color;
@@ -160,6 +188,7 @@ namespace Mandelbrot_fractal_2
                     lock (locker)
                     {
                         bitmap.SetPixel(x, y, color);
+                        pixel++;
                     }
                 });
                 //for (int y = 0; y < height; y++)
@@ -172,11 +201,8 @@ namespace Mandelbrot_fractal_2
                 //    //Console.WriteLine(color.ToString());
                 //    bitmap.SetPixel(x, y, color);
                 //}
-
-                if (x % 50 == 0)
-                {
-                    Console.WriteLine(x);
-                }
+                progressBar.Value = pixel;
+                progressBar.Update();                
             }
             return bitmap;
         }
