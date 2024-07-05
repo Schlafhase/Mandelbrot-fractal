@@ -429,8 +429,9 @@ namespace Mandelbrot_fractal_2
 		{
 			using (OpenFileDialog openFileDialog = new OpenFileDialog())
 			{
-				openFileDialog.InitialDirectory = "./save_files";
+				openFileDialog.InitialDirectory = Path.GetFullPath("./save_files");
 				openFileDialog.Filter = "json files (*.json)|*.json";
+				openFileDialog.RestoreDirectory = false;
 
 				if (openFileDialog.ShowDialog() == DialogResult.OK)
 				{

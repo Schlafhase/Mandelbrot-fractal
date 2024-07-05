@@ -6,11 +6,11 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("Mandelbrot fractal 2")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("A program to view the mandelbrot fractal")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("Linus Schneeberg")]
 [assembly: AssemblyProduct("Mandelbrot fractal 2")]
-[assembly: AssemblyCopyright("Copyright ©  2024")]
+[assembly: AssemblyCopyright("Copyright ©  2024 Linus Schneeberg (MIT License)")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
