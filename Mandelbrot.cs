@@ -10,7 +10,7 @@ using System.Windows.Forms;
 
 namespace Mandelbrot_fractal_2
 {
-    public class Mandelbrot
+    public static class Mandelbrot
     {
         private static int belongsToMandelbrot(ComplexNumber number, int iterations)
         {
@@ -20,15 +20,10 @@ namespace Mandelbrot_fractal_2
             double y2 = 0;
             for (int i = 0; i < iterations; i++)
             {
-                //Console.WriteLine(z);
-                //z = z^2 + number
                 y = (x + x) * y + number.Y;
                 x = x2 - y2 + number.X;
                 x2 = x * x;
                 y2 = y * y;
-                //z = new ComplexNumber(
-                //    x: (z.X * z.X) - (z.Y * z.Y) + number.X,
-                //    y: 2 * z.X * z.Y + number.Y);
                 if (x2 + y2 >= 4)
                 {
                     return i;
@@ -116,7 +111,6 @@ namespace Mandelbrot_fractal_2
         {
             Random rnd = new Random(0);
             Color[] colorPalette = generateColorArray(iterations);
-            //progressBar.Maximum = (width * height);
 
             double deltaX = (xRight - xLeft) / width;
             double deltaY = (yTop - yBottom) / height;
@@ -124,7 +118,6 @@ namespace Mandelbrot_fractal_2
             var rect = new Rectangle(0, 0, width, height);
             var lockedBits = bitmap.LockBits(rect, System.Drawing.Imaging.ImageLockMode.ReadWrite, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
             double progress = 0;
-            //int pixel = 0;
 
             byte[] data = new byte[width * height * 3];
 
@@ -137,39 +130,17 @@ namespace Mandelbrot_fractal_2
                     ComplexNumber c = new ComplexNumber(mandelbrotX, mandelbrotY);
                     int mandelBrotIndex = belongsToMandelbrot(c, iterations);
                     Color color;
-                    //if(mandelBrotIndex == 0) { color = Color.White; }
                     if (mandelBrotIndex == iterations) { color = Color.Black; }
                     else
                     {
                         color = colorPalette[mandelBrotIndex % colorPalette.Length];
                     }
-                    //Console.WriteLine(belongsToMandelbrot(c, iterations));
-                    //Console.WriteLine(color.ToString());
-
                     var position = 3 * (y * width + x);
                     data[position] = color.B;
                     data[position + 1] = color.G;
                     data[position + 2] = color.R;
-
-                    //lock (locker)
-                    //{
-                    //    bitmap.SetPixel(x, y, color);
-                    //    //pixel++;
-                    //}
                 });
 
-                //for (int y = 0; y < height; y++)
-                //{
-                //    double mandelbrotX = x*deltaX + xLeft;
-                //    double mandelbrotY = -y*deltaY + yTop;
-                //    ComplexNumber c = new ComplexNumber(mandelbrotX, mandelbrotY);
-                //    Color color = colors[belongsToMandelbrot(c, iterations)];
-                //    //Console.WriteLine(belongsToMandelbrot(c, iterations));
-                //    //Console.WriteLine(color.ToString());
-                //    bitmap.SetPixel(x, y, color);
-                //}
-                //progressBar.Value = pixel;
-                //progressBar.Update();
                 if(worker.CancellationPending)
                 {
                     e.Cancel = true;
@@ -181,21 +152,7 @@ namespace Mandelbrot_fractal_2
                     progress = ((double)y) / (height - 1);
                     worker.ReportProgress((int)(progress * 100));
                 }
-                //Action<double> updateProgressBar = (double percentage) =>
-                //{
-                //    progressBar.Value = (int)(percentage * 100);
-                //    progressBar.Update();
-                //};
 
-                //lock(progressBarLocker)
-                //{
-                //    progressBar.Value = (int)(progress * 100);
-                //    progressBar.Update();
-                //}
-                //progressBar.Invoke(() =>
-                //{
-
-                //});
             }
 
             Marshal.Copy(data, 0, lockedBits.Scan0, data.Length);
