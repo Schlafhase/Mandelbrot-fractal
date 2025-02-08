@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
@@ -52,7 +53,7 @@ namespace Mandelbrot_fractal_2
             {
                 for (int i = 0; i < ts.Length; i++)
                 {
-                    var t = ts[i];
+                    double t = ts[i];
                     int r = (int)(startColor.R + (endColor.R - startColor.R) * t);
                     int g = (int)(startColor.G + (endColor.G - startColor.G) * t);
                     int b = (int)(startColor.B + (endColor.B - startColor.B) * t);
@@ -107,7 +108,7 @@ namespace Mandelbrot_fractal_2
         }
 
         public static Bitmap CreateBitmap(int width, int height, int iterations, double xLeft, double xRight, double yBottom, double yTop,
-            BackgroundWorker worker, DoWorkEventArgs e)
+            BackgroundWorker worker = null, DoWorkEventArgs e = null)
         {
             Random rnd = new Random(0);
             Color[] colorPalette = generateColorArray(iterations);
@@ -115,50 +116,48 @@ namespace Mandelbrot_fractal_2
             double deltaX = (xRight - xLeft) / width;
             double deltaY = (yTop - yBottom) / height;
             Bitmap bitmap = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-            var rect = new Rectangle(0, 0, width, height);
-            var lockedBits = bitmap.LockBits(rect, System.Drawing.Imaging.ImageLockMode.ReadWrite, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-            double progress = 0;
+            Rectangle rect = new Rectangle(0, 0, width, height);
+            BitmapData lockedBits = bitmap.LockBits(rect, System.Drawing.Imaging.ImageLockMode.ReadWrite, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
 
             byte[] data = new byte[width * height * 3];
 
-            for (int y = 0; (y < height); y++)
+            for (int y = 0; y < height; y++)
             {
                 Parallel.For(0, width, x =>
                 {
-                    double mandelbrotX = x * deltaX + xLeft;
-                    double mandelbrotY = -y * deltaY + yTop;
-                    ComplexNumber c = new ComplexNumber(mandelbrotX, mandelbrotY);
+                    // double mandelbrotX = x * deltaX + xLeft;
+                    // double mandelbrotY = -y * deltaY + yTop;
+                    // ComplexNumber c = new ComplexNumber(mandelbrotX, mandelbrotY);
+                    ComplexNumber c = ScreenPosToComplexNumber(width, height, xLeft, xRight, yBottom, yTop, x, y);
                     int mandelBrotIndex = belongsToMandelbrot(c, iterations);
-                    Color color;
-                    if (mandelBrotIndex == iterations) { color = Color.Black; }
-                    else
-                    {
-                        color = colorPalette[mandelBrotIndex % colorPalette.Length];
-                    }
-                    var position = 3 * (y * width + x);
+
+                    Color color = mandelBrotIndex == iterations ? Color.Black : colorPalette[mandelBrotIndex % colorPalette.Length];
+                    int position = 3 * (y * width + x);
                     data[position] = color.B;
                     data[position + 1] = color.G;
                     data[position + 2] = color.R;
                 });
 
-                if(worker.CancellationPending)
+                if (worker != null && e != null)
                 {
-                    e.Cancel = true;
-                    break;
-                }
+                    if (worker.CancellationPending)
+                    {
+                        e.Cancel = true;
+                        break;
+                    }
 
-                if (y % 100 == 0)
-                {
-                    progress = ((double)y) / (height - 1);
-                    worker.ReportProgress((int)(progress * 100));
+                    if (y % 100 == 0)
+                    {
+                        double progress = ((double)y) / (height - 1);
+                        worker.ReportProgress((int)(progress * 100));
+                    }
                 }
-
             }
 
             Marshal.Copy(data, 0, lockedBits.Scan0, data.Length);
             bitmap.UnlockBits(lockedBits);
 
-            worker.ReportProgress(100);
+            worker?.ReportProgress(100);
             return bitmap;
         }
     }
