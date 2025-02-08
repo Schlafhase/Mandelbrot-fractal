@@ -1,19 +1,13 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
-using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using Timer = System.Windows.Forms.Timer;
 
 namespace Mandelbrot_fractal_2
 {

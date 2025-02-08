@@ -4,10 +4,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography.X509Certificates;
-using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace Mandelbrot_fractal_2
 {
@@ -78,48 +75,45 @@ namespace Mandelbrot_fractal_2
             return colorPalette;
         }
 
-        private readonly static object locker = new object();
-        private readonly static object progressBarLocker = new object();
+        // private static readonly object locker = new object();
+        // private static readonly object progressBarLocker = new object();
 
         public static ComplexNumber ScreenPosToComplexNumber(int width, int height, double xLeft, double xRight, double yBottom, double yTop, int screenX, int screenY)
         {
-            double deltaX = (xRight - xLeft) / width;
-            double deltaY = (yTop - yBottom) / height;
+            double deltaX = (xRight - xLeft) / width; // distance between two pixels in the x direction
+            double deltaY = (yTop - yBottom) / height; // distance between two pixels in the y direction
 
             double realValue = screenX * deltaX + xLeft;
-            double imaginaryValue = -screenY * deltaY + yTop;
+            double imaginaryValue = (height - screenY) * deltaY + yBottom; 
 
-            ComplexNumber result = new ComplexNumber(realValue, imaginaryValue);
-
-            return result;
+            return new ComplexNumber(realValue, imaginaryValue);
         }
 
         public static (int, int) ComplexNumberToScreenPos(int width, int height, double xLeft, double xRight, double yBottom, double yTop, double realValue, double imaginaryValue)
         {
             double deltaX = width / (xRight - xLeft);
-            double deltaY = (height / (yBottom - yTop));
+            double deltaY = height / (yTop - yBottom);
 
-            double offsetX = -(deltaX * xLeft);
-            double offsetY = -(deltaY * yTop);
+            int x = (int)((realValue - xLeft) * deltaX);
+            int y = (int)((imaginaryValue - yBottom) * deltaY);
 
-            int x = (int)(realValue * deltaX + offsetX);
-            int y = (int)(imaginaryValue * deltaY + offsetY);
             return (x, y);
         }
 
         public static Bitmap CreateBitmap(int width, int height, int iterations, double xLeft, double xRight, double yBottom, double yTop,
             BackgroundWorker worker = null, DoWorkEventArgs e = null)
         {
-            Random rnd = new Random(0);
+            // Random rnd = new Random(0);
             Color[] colorPalette = generateColorArray(iterations);
 
-            double deltaX = (xRight - xLeft) / width;
-            double deltaY = (yTop - yBottom) / height;
-            Bitmap bitmap = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            // double deltaX = (xRight - xLeft) / width;
+            // double deltaY = (yTop - yBottom) / height;
+            Bitmap bitmap = new Bitmap(width, height, PixelFormat.Format24bppRgb);
             Rectangle rect = new Rectangle(0, 0, width, height);
-            BitmapData lockedBits = bitmap.LockBits(rect, System.Drawing.Imaging.ImageLockMode.ReadWrite, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            BitmapData lockedBits = bitmap.LockBits(rect, ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
 
-            byte[] data = new byte[width * height * 3];
+            int stride = lockedBits.Stride;
+            byte[] data = new byte[stride * height];
 
             for (int y = 0; y < height; y++)
             {
@@ -132,7 +126,7 @@ namespace Mandelbrot_fractal_2
                     int mandelBrotIndex = belongsToMandelbrot(c, iterations);
 
                     Color color = mandelBrotIndex == iterations ? Color.Black : colorPalette[mandelBrotIndex % colorPalette.Length];
-                    int position = 3 * (y * width + x);
+                    int position = y * stride + x * 3;
                     data[position] = color.B;
                     data[position + 1] = color.G;
                     data[position + 2] = color.R;
