@@ -84,7 +84,7 @@ namespace Mandelbrot_fractal_2
 					Console.WriteLine("Cancelled");
 					return;
 				}
-				Console.WriteLine($"Completed!");
+				Console.WriteLine("Completed!");
 				this.canvasBox.Image?.Dispose();
 				this.canvasBox.Image = bitmap;
 			};
